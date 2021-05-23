@@ -1233,7 +1233,7 @@ def read_input(fname):
         t = f.variables['t'][:]
         q = f.variables['q'][:]
         p = f.variables['p'][:]
-        dcwp = f.variables['dcpw'][:]
+        dcwp = f.variables['dcwp'][:]
         dwpi = f.variables['dwpi'][:]
         drl = f.variables['drl'][:]
         dri = f.variables['dri'][:]
