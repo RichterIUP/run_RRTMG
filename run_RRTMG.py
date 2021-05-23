@@ -544,7 +544,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     RECORD_1_2  = 18 * " " + "{:2d}".format(IAER)
     RECORD_1_2 += 29 * " " + "{:1d}".format(IATM)
     RECORD_1_2 += 32 * " " + "{:1d}".format(ISCAT)
-    RECORD_1_2 += 1  * " " + "{:1d}".format(ISTRM)
+    RECORD_1_2 += 1  * " " + " "#"{:1d}".format(ISTRM)
     RECORD_1_2 += 2  * " " + "{:3d}".format(IOUT)
     RECORD_1_2 += 3  * " " + "{:1d}".format(ICMA)
     RECORD_1_2 += 0  * " " + "{:1d}".format(ICLD)
