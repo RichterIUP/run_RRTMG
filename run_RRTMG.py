@@ -1262,8 +1262,8 @@ def main(fname_in, fname_out="out.nc"):
     ## Read paths to RRTMG
     with open("paths_rrtmg", "r") as f:
         global SRC_RRTMG_LW, SRC_RRTMG_SW
-        SRC_RRTMG_LW = f.readline()
-        SRC_RRTMG_SW = f.readline()
+        SRC_RRTMG_LW = f.readline().rstrip()
+        SRC_RRTMG_SW = f.readline().rstrip()
         
     ## Read keys
     with open("keys_sw", "r") as f:
