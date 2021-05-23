@@ -8,6 +8,7 @@ Created on Wed Jul 15 14:09:11 2020
 
 import os
 import sys
+import shutil
 import subprocess
 import pandas as pd
 import netCDF4 as nc
@@ -128,11 +129,6 @@ def create_cloud_rrtmg(lay_liq, lay_ice, cwp, rliq, rice, fice, homogenous, clt)
     RECORD_C1_3 = ""
     CWP = cwp
     ii = 0
-    f = open("log", "a")
-    f.write("{}\n".format(CWP))
-    f.write("{}\n".format(lay_liq))
-    f.write("{}\n".format(lay_ice))
-    f.close()
     
     for lay in list(np.union1d(lay_liq, lay_ice)):
         RECORD_C1_3 += " "
@@ -658,12 +654,12 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     RECORD_1_2_1 += 3  * " " + "{:2d}".format(ISOLVAR)
     RECORD_1_2_1 += "{:10.4f}".format(SCON)
     RECORD_1_2_1 += "{:10.5f}".format(SOLCYCFRAC)
-    if ISOLVAR == -1 or ISOLVAR == 3:
-        for ii in range(14):
-            RECORD_1_2_1 += "{:5.3f}".format(SOLVAR[ii])
-    else:
-        for ii in range(2):
-            RECORD_1_2_1 += "{:5.3f}".format(SOLVAR[ii])
+    #if ISOLVAR == -1 or ISOLVAR == 3:
+    #    for ii in range(14):
+    #        RECORD_1_2_1 += "{:5.3f}".format(SOLVAR[ii])
+    #else:
+    #    for ii in range(2):
+    #        RECORD_1_2_1 += "{:5.3f}".format(SOLVAR[ii])
             
     # RECORD 1.4  
   
@@ -956,17 +952,17 @@ def RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, sem
                            t_prof=t, \
                            humd_prof=q, \
                            solar_zenith_angle=sza, \
-                           clouds=2, \
+                           clouds=clouds, \
                            albedo_dir=albedo_dir, \
                                albedo_diff=albedo_diff, \
                                lat=lat, co2=co2, n2o=n2o, ch4=ch4)
     if clouds != 0:
         cld = create_cloud_rrtmg(lay_liq=cloud, lay_ice=cloud, cwp=cwp, rliq=rl, rice=ri, fice=wpi, homogenous=False, clt=clt)
+        with open("IN_CLD_RRTM", "w") as f:
+            f.write(cld)
     with open("INPUT_RRTM", "w") as f:
         f.write(ret)
 
-    with open("IN_CLD_RRTM", "w") as f:
-        f.write(cld)  
     subprocess.call(['{}'.format(SRC_RRTMG_SW)])
     all_sw = read_results(len(z), 'sw_sum', KEYS_SW)
     
@@ -1225,9 +1221,9 @@ def read_input(fname):
     '''
     
     with nc.Dataset(fname, "r") as f:
-        lat = f.variables['lat'][:]
-        lon = f.variables['lon'][:]
-        sza = f.variables['sza'][:]
+        lat = f.variables['lat'][0]
+        lon = f.variables['lon'][0]
+        sza = f.variables['sza'][0]
         cwp = f.variables['cwp'][:]
         wpi = f.variables['wpi'][:]
         rl  = f.variables['rl'][:]
@@ -1244,16 +1240,16 @@ def read_input(fname):
         co2 = f.variables['co2'][:]
         n2o = f.variables['n2o'][:]
         ch4 = f.variables['ch4'][:]
-        albedo_dir = np.float(f.variables['albedo_dir'][:])
-        albedo_diff = np.float(f.variables['albedo_diff'][:])
-        iceconc = np.float(f.variables['iceconc'][:])
-        semiss = f.variables['semiss'][:]
+        albedo_dir = np.float(f.variables['albedo_dir'][0])
+        albedo_diff = np.float(f.variables['albedo_diff'][0])
+        iceconc = np.float(f.variables['iceconc'][0])
+        semiss = f.variables['semiss'][0]
         clt = f.variables['clt'][:]
-        diff_lwp = f.variables['diff_lwp'][:]
-        flag_lwc = f.variables['flag_lwc'][:]
-        flag_iwc = f.variables['flag_iwc'][:]
-        flag_reff = f.variables['flag_reff'][:]
-        flag_reffice = f.variables['flag_reffice'][:]
+        diff_lwp = f.variables['diff_lwp'][0]
+        flag_lwc = f.variables['flag_lwc'][0]
+        flag_iwc = f.variables['flag_iwc'][0]
+        flag_reff = f.variables['flag_reff'][0]
+        flag_reffice = f.variables['flag_reffice'][0]
     return  lat, lon, sza, cwp, wpi, rl, ri, cloud, z, t, q, p, dcwp, dwpi, drl, dri, co2, n2o, ch4, albedo_dir, albedo_diff, iceconc, semiss, clt, diff_lwp, flag_lwc, flag_iwc, flag_reff, flag_reffice 
         
 def main(fname_in, fname_out="out.nc"):
@@ -1331,6 +1327,8 @@ def main(fname_in, fname_out="out.nc"):
     return 1
 
 if __name__ == '__main__':
+    if os.path.exists(sys.argv[2]):
+        shutil.rmtree(sys.argv[2])
+    os.mkdir(sys.argv[2])
     for fname in os.listdir(sys.argv[1]):
-        main(os.path.join(sys.argv[1], fname), "out.nc")
-        break
+        main(os.path.join(sys.argv[1], fname), os.path.join(sys.argv[2], "RRTMG_"+fname))
