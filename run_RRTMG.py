@@ -1331,4 +1331,7 @@ if __name__ == '__main__':
         shutil.rmtree(sys.argv[2])
     os.mkdir(sys.argv[2])
     for fname in os.listdir(sys.argv[1]):
-        main(os.path.join(sys.argv[1], fname), os.path.join(sys.argv[2], "RRTMG_"+fname))
+        try:
+            main(os.path.join(sys.argv[1], fname), os.path.join(sys.argv[2], "RRTMG_"+fname))
+        except Exception:
+            continue
