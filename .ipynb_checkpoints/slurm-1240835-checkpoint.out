@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "run_RRTMG.py", line 1336, in <module>
+  File "/home/eb/software/Python/3.6.1-intel-2017a/lib/python3.6/shutil.py", line 480, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/home/eb/software/Python/3.6.1-intel-2017a/lib/python3.6/shutil.py", line 438, in _rmtree_safe_fd
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "/home/eb/software/Python/3.6.1-intel-2017a/lib/python3.6/shutil.py", line 436, in _rmtree_safe_fd
+    os.unlink(name, dir_fd=topfd)
+OSError: [Errno 16] Device or resource busy: '.nfs0000001106ad1021000016fd'

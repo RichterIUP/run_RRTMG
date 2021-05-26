@@ -1,0 +1,49 @@
+#!/bin/bash
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -t 4320
+#SBATCH -p all
+#SBATCH --mem=9000
+#SBATCH --open-mode=append
+
+#export LBL_HOME=/home/phi.richter/radiative_transfer/lblrtm
+module unuse /home/eb/modules/all
+module unuse /home/eb/modules/LAMOS
+module use /home/eb/modules/_legacy/all
+module load Python
+module load netcdf4-python
+module load matplotlib
+
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_nomod
+sleep 5
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pwp
+sleep 5
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pr
+sleep 5
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_mwp
+sleep 5
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_mr
+sleep 5
+
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_nomod
+sleep 5
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_mwp
+sleep 5
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_pwp
+sleep 5
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_scale
+
+mkdir /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_nomod
+python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_nomod /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_nomod &
+#mkdir /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pwp
+#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_pwp /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pwp &
+#mkdir /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pr
+#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_pr /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pr &
+mkdir /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_mwp
+#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_mwp /home/phi.richter/RRTMG_OUTPUT/RRTMG_CNET_mwp &
+#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_mr /home/phi.richter/RRTMG_OUTPUT/RRTMG_CNET_mr &
+
+#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_nomod /home/phi.richter/RRTMG_OUTPUT/RRTMG_ERA5_nomod &
+#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_mwp /home/phi.richter/RRTMG_OUTPUT/RRTMG_ERA5_mwp &
+#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_pwp /home/phi.richter/RRTMG_OUTPUT/RRTMG_ERA5_pwp &
+#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_scale /home/phi.richter/RRTMG_OUTPUT/RRTMG_ERA5_scale &

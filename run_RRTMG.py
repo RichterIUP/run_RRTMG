@@ -423,7 +423,7 @@ def create_input_rrtmg_lw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #               the K'th molecule (see Table II)
     #A -> ppmv, B -> cm-3, C -> g/kg, D -> g/m3 (so kann man retrievte Spurengase verwenden) H -> % (relative Humidity)
     # ( 1)  H2O  ( 2)  CO2  ( 3)    O3 ( 4)   N2O ( 5)    CO ( 6)   CH4 ( 7)    O2
-    with open("atmosphere", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/atmosphere", "r") as f:
         JCHAR = f.readline().rstrip()
     #JCHAR = "HA4A4A4"
     #JCHAR = "C555555"
@@ -852,7 +852,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #               the K'th molecule (see Table II)
     #A -> ppmv, B -> cm-3, C -> g/kg, D -> g/m3 (so kann man retrievte Spurengase verwenden)
     # ( 1)  H2O  ( 2)  CO2  ( 3)    O3 ( 4)   N2O ( 5)    CO ( 6)   CH4 ( 7)    O2
-    with open("atmosphere", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/atmosphere", "r") as f:
         JCHAR = f.readline().rstrip()
     #JCHAR = "H444444"
     #JCHAR = "HA4A4A4"
@@ -971,7 +971,7 @@ def RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, sem
                        t_prof=t, \
                        humd_prof=q, \
                        solar_zenith_angle=sza, \
-                       clouds=2, \
+                       clouds=clouds, \
                        semiss=semiss, co2=co2, n2o=n2o, ch4=ch4)
         
     with open("INPUT_RRTM", "w") as f:
@@ -1260,18 +1260,18 @@ def main(fname_in, fname_out="out.nc"):
     lat, lon, sza, cwp, wpi, rl, ri, cloud, z, t, q, p, dcwp, dwpi, drl, dri, co2, n2o, ch4, albedo_dir, albedo_diff, iceconc, semiss, clt, diff_lwp, flag_lwc, flag_iwc, flag_reff, flag_reffice = read_input(fname_in)
     
     ## Read paths to RRTMG
-    with open("paths_rrtmg", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/paths_rrtmg", "r") as f:
         global SRC_RRTMG_LW, SRC_RRTMG_SW
         SRC_RRTMG_LW = f.readline().rstrip()
         SRC_RRTMG_SW = f.readline().rstrip()
         
     ## Read keys
-    with open("keys_sw", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/keys_sw", "r") as f:
         global KEYS_SW
         for line in f.readlines():
             KEYS_SW.append(line.rstrip())            
             
-    with open("keys_lw", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/keys_lw", "r") as f:
         global KEYS_LW
         for line in f.readlines():
             KEYS_LW.append(line.rstrip())      
@@ -1327,11 +1327,12 @@ def main(fname_in, fname_out="out.nc"):
     return 1
 
 if __name__ == '__main__':
-    if os.path.exists(sys.argv[2]):
-        shutil.rmtree(sys.argv[2])
-    os.mkdir(sys.argv[2])
+    #if os.path.exists(sys.argv[2]):
+    #    shutil.rmtree(sys.argv[2])
+    #os.mkdir(sys.argv[2])
+    os.chdir(sys.argv[2])
     for fname in os.listdir(sys.argv[1]):
         try:
-            main(os.path.join(sys.argv[1], fname), os.path.join(sys.argv[2], "RRTMG_"+fname))
+            main(os.path.join(sys.argv[1], fname), "RRTMG_"+fname)
         except Exception:
             continue

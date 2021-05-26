@@ -1,0 +1,7 @@
+mkdir: cannot create directory ‘/home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_nomod’: File exists
+Traceback (most recent call last):
+  File "run_RRTMG.py", line 1336, in <module>
+    main(os.path.join(sys.argv[1], fname), "RRTMG_"+fname)
+  File "run_RRTMG.py", line 1263, in main
+    with open("paths_rrtmg", "r") as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'paths_rrtmg'

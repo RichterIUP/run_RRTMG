@@ -1,0 +1,2 @@
+run_RRTMG.py:1245: UserWarning: Warning: converting a masked element to nan.
+  iceconc = np.float(f.variables['iceconc'][0])

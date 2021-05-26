@@ -14,13 +14,10 @@ module load Python
 module load netcdf4-python
 module load matplotlib
 
-python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_nomod /home/phi.richter/RRTMG_OUTPUT/RRTMG_CNET_nomod
-#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_pwp /home/phi.richter/RRTMG_OUTPUT/RRTMG_CNET_pwp
-#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_pr /home/phi.richter/RRTMG_OUTPUT/RRTMG_CNET_pr
-#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_mwp /home/phi.richter/RRTMG_OUTPUT/RRTMG_CNET_mwp
-#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_mr /home/phi.richter/RRTMG_OUTPUT/RRTMG_CNET_mr
 
-#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_nomod /home/phi.richter/RRTMG_OUTPUT/RRTMG_ERA5_nomod
-#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_mwp /home/phi.richter/RRTMG_OUTPUT/RRTMG_ERA5_mwp
-#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_pwp /home/phi.richter/RRTMG_OUTPUT/RRTMG_ERA5_pwp
-#python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_scale /home/phi.richter/RRTMG_OUTPUT/RRTMG_ERA5_scale
+mkdir $1
+ln -s paths_rrtmg $1
+ln -s keys_sw $1
+ln -s keys_lw $1
+ln -s atmosphere $1
+python3 run_RRTMG.py $2 $1

@@ -1,0 +1,8 @@
+run_RRTMG.py:1227: RuntimeWarning: invalid value encountered in greater
+  cwp = f.variables['cwp'][:]
+run_RRTMG.py:1228: RuntimeWarning: invalid value encountered in greater
+  wpi = f.variables['wpi'][:]
+run_RRTMG.py:1230: RuntimeWarning: invalid value encountered in greater
+  ri  = f.variables['ri'][:]
+run_RRTMG.py:1245: UserWarning: Warning: converting a masked element to nan.
+  iceconc = np.float(f.variables['iceconc'][0])
