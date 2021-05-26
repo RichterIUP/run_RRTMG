@@ -1290,19 +1290,19 @@ def main(fname_in, fname_out="out.nc"):
     
     ## Perform all sky calculation
     all_sw, all_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    #dcwp_sw, dcwp_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp+delta, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    #drl_sw, drl_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl+delta, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    #dri_sw, dri_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri+delta, wpi, semiss, lat,  co2, n2o, ch4, clt, 2)   
-    #dwpi_sw, dwpi_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi+delta_wpi, semiss, lat, co2, n2o, ch4, clt, 2)   
+    dcwp_sw, dcwp_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp+delta, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
+    drl_sw, drl_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl+delta, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
+    dri_sw, dri_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri+delta, wpi, semiss, lat,  co2, n2o, ch4, clt, 2)   
+    dwpi_sw, dwpi_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi+delta_wpi, semiss, lat, co2, n2o, ch4, clt, 2)   
     
-    dcwp_sw = all_sw
-    dcwp_lw = all_lw
-    drl_sw = all_sw
-    drl_lw = all_lw
-    dri_sw = all_sw
-    dri_lw = all_lw
-    dwpi_sw = all_sw
-    dwpi_lw = all_lw
+    #dcwp_sw = all_sw
+    #dcwp_lw = all_lw
+    #drl_sw = all_sw
+    #drl_lw = all_lw
+    #dri_sw = all_sw
+    #dri_lw = all_lw
+    #dwpi_sw = all_sw
+    #dwpi_lw = all_lw
 
     ## Calculate difference quotient
     deriv_cwp_lw = error_propagation(dcwp_lw, all_lw, delta)
