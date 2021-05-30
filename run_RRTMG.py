@@ -1333,6 +1333,8 @@ if __name__ == '__main__':
     os.chdir(sys.argv[2])
     for fname in os.listdir(sys.argv[1]):
         try:
+            if os.path.exists("RRTMG_"+fname):
+                continue
             main(os.path.join(sys.argv[1], fname), "RRTMG_"+fname)
         except Exception:
             continue

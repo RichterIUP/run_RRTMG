@@ -14,24 +14,25 @@ module load Python
 module load netcdf4-python
 module load matplotlib
 
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_nomod /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_nomod
-sleep 5
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pwp /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_pwp
-sleep 5
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pr /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_pr
-sleep 5
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_mwp /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_mwp
-sleep 5
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_mr /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_mr
-sleep 5
+sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_nomod_w_diffquot /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_nomod
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_nomod /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_nomod
+#sleep 5
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pwp /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_pwp
+#sleep 5
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_pr /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_pr
+#sleep 5
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_mwp /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_mwp
+#sleep 5
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_mr /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_mr
+#sleep 5
 
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_nomod /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_nomod
-sleep 5
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_mwp /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_mwp
-sleep 5
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_pwp /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_pwp
-sleep 5
-sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_scale /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_scale
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_nomod /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_nomod
+#sleep 5
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_mwp /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_mwp
+#sleep 5
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_pwp /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_pwp
+#sleep 5
+#sbatch RRTM /home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_scale /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_ERA5_input_scale
 
 #mkdir /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_nomod
 #python3 run_RRTMG.py /home/phi.richter/INPUT_FOR_RRTMG/RRTMG_input_nomod /home/phi.richter/Code/run_RRTMG/RRTMG_CNET_nomod &
