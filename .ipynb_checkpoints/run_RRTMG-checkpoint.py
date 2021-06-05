@@ -8,6 +8,7 @@ Created on Wed Jul 15 14:09:11 2020
 
 import os
 import sys
+import shutil
 import subprocess
 import pandas as pd
 import netCDF4 as nc
@@ -128,11 +129,6 @@ def create_cloud_rrtmg(lay_liq, lay_ice, cwp, rliq, rice, fice, homogenous, clt)
     RECORD_C1_3 = ""
     CWP = cwp
     ii = 0
-    f = open("log", "a")
-    f.write("{}\n".format(CWP))
-    f.write("{}\n".format(lay_liq))
-    f.write("{}\n".format(lay_ice))
-    f.close()
     
     for lay in list(np.union1d(lay_liq, lay_ice)):
         RECORD_C1_3 += " "
@@ -427,7 +423,7 @@ def create_input_rrtmg_lw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #               the K'th molecule (see Table II)
     #A -> ppmv, B -> cm-3, C -> g/kg, D -> g/m3 (so kann man retrievte Spurengase verwenden) H -> % (relative Humidity)
     # ( 1)  H2O  ( 2)  CO2  ( 3)    O3 ( 4)   N2O ( 5)    CO ( 6)   CH4 ( 7)    O2
-    with open("atmosphere", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/atmosphere", "r") as f:
         JCHAR = f.readline().rstrip()
     #JCHAR = "HA4A4A4"
     #JCHAR = "C555555"
@@ -548,7 +544,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     RECORD_1_2  = 18 * " " + "{:2d}".format(IAER)
     RECORD_1_2 += 29 * " " + "{:1d}".format(IATM)
     RECORD_1_2 += 32 * " " + "{:1d}".format(ISCAT)
-    RECORD_1_2 += 1  * " " + "{:1d}".format(ISTRM)
+    RECORD_1_2 += 1  * " " + " "#"{:1d}".format(ISTRM)
     RECORD_1_2 += 2  * " " + "{:3d}".format(IOUT)
     RECORD_1_2 += 3  * " " + "{:1d}".format(ICMA)
     RECORD_1_2 += 0  * " " + "{:1d}".format(ICLD)
@@ -658,12 +654,12 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     RECORD_1_2_1 += 3  * " " + "{:2d}".format(ISOLVAR)
     RECORD_1_2_1 += "{:10.4f}".format(SCON)
     RECORD_1_2_1 += "{:10.5f}".format(SOLCYCFRAC)
-    if ISOLVAR == -1 or ISOLVAR == 3:
-        for ii in range(14):
-            RECORD_1_2_1 += "{:5.3f}".format(SOLVAR[ii])
-    else:
-        for ii in range(2):
-            RECORD_1_2_1 += "{:5.3f}".format(SOLVAR[ii])
+    #if ISOLVAR == -1 or ISOLVAR == 3:
+    #    for ii in range(14):
+    #        RECORD_1_2_1 += "{:5.3f}".format(SOLVAR[ii])
+    #else:
+    #    for ii in range(2):
+    #        RECORD_1_2_1 += "{:5.3f}".format(SOLVAR[ii])
             
     # RECORD 1.4  
   
@@ -856,7 +852,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #               the K'th molecule (see Table II)
     #A -> ppmv, B -> cm-3, C -> g/kg, D -> g/m3 (so kann man retrievte Spurengase verwenden)
     # ( 1)  H2O  ( 2)  CO2  ( 3)    O3 ( 4)   N2O ( 5)    CO ( 6)   CH4 ( 7)    O2
-    with open("atmosphere", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/atmosphere", "r") as f:
         JCHAR = f.readline().rstrip()
     #JCHAR = "H444444"
     #JCHAR = "HA4A4A4"
@@ -956,17 +952,17 @@ def RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, sem
                            t_prof=t, \
                            humd_prof=q, \
                            solar_zenith_angle=sza, \
-                           clouds=2, \
+                           clouds=clouds, \
                            albedo_dir=albedo_dir, \
                                albedo_diff=albedo_diff, \
                                lat=lat, co2=co2, n2o=n2o, ch4=ch4)
     if clouds != 0:
         cld = create_cloud_rrtmg(lay_liq=cloud, lay_ice=cloud, cwp=cwp, rliq=rl, rice=ri, fice=wpi, homogenous=False, clt=clt)
+        with open("IN_CLD_RRTM", "w") as f:
+            f.write(cld)
     with open("INPUT_RRTM", "w") as f:
         f.write(ret)
 
-    with open("IN_CLD_RRTM", "w") as f:
-        f.write(cld)  
     subprocess.call(['{}'.format(SRC_RRTMG_SW)])
     all_sw = read_results(len(z), 'sw_sum', KEYS_SW)
     
@@ -975,7 +971,7 @@ def RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, sem
                        t_prof=t, \
                        humd_prof=q, \
                        solar_zenith_angle=sza, \
-                       clouds=2, \
+                       clouds=clouds, \
                        semiss=semiss, co2=co2, n2o=n2o, ch4=ch4)
         
     with open("INPUT_RRTM", "w") as f:
@@ -1098,9 +1094,9 @@ def write_results(all_sw, all_lw, clear_sw, clear_lw,  deriv_cwp_lw, deriv_cwp_s
         dwpi_out.units = "1"
         dwpi_out[:] = dwpi
         
-        #clt_out = outfile.createVariable("cloud_fraction", "f8", ("const", ))
-        #clt_out.units = "1"
-        #clt_out[:] = clt
+        clt_out = outfile.createVariable("cloud_fraction", "f8", ("cgrid", ))
+        clt_out.units = "1"
+        clt_out[:] = clt
         
         co2_out = outfile.createVariable("co2_profile", "f8", ("level", ))
         co2_out.units = "ppmv"
@@ -1225,9 +1221,9 @@ def read_input(fname):
     '''
     
     with nc.Dataset(fname, "r") as f:
-        lat = f.variables['lat'][:]
-        lon = f.variables['lon'][:]
-        sza = f.variables['sza'][:]
+        lat = f.variables['lat'][0]
+        lon = f.variables['lon'][0]
+        sza = f.variables['sza'][0]
         cwp = f.variables['cwp'][:]
         wpi = f.variables['wpi'][:]
         rl  = f.variables['rl'][:]
@@ -1237,23 +1233,23 @@ def read_input(fname):
         t = f.variables['t'][:]
         q = f.variables['q'][:]
         p = f.variables['p'][:]
-        dcwp = f.variables['dcpw'][:]
+        dcwp = f.variables['dcwp'][:]
         dwpi = f.variables['dwpi'][:]
         drl = f.variables['drl'][:]
         dri = f.variables['dri'][:]
         co2 = f.variables['co2'][:]
         n2o = f.variables['n2o'][:]
         ch4 = f.variables['ch4'][:]
-        albedo_dir = np.float(f.variables['albedo_dir'][:])
-        albedo_diff = np.float(f.variables['albedo_diff'][:])
-        iceconc = np.float(f.variables['iceconc'][:])
-        semiss = f.variables['semiss'][:]
+        albedo_dir = np.float(f.variables['albedo_dir'][0])
+        albedo_diff = np.float(f.variables['albedo_diff'][0])
+        iceconc = np.float(f.variables['iceconc'][0])
+        semiss = f.variables['semiss'][0]
         clt = f.variables['clt'][:]
-        diff_lwp = f.variables['diff_lwp'][:]
-        flag_lwc = f.variables['flag_lwc'][:]
-        flag_iwc = f.variables['flag_iwc'][:]
-        flag_reff = f.variables['flag_reff'][:]
-        flag_reffice = f.variables['flag_reffice'][:]
+        diff_lwp = f.variables['diff_lwp'][0]
+        flag_lwc = f.variables['flag_lwc'][0]
+        flag_iwc = f.variables['flag_iwc'][0]
+        flag_reff = f.variables['flag_reff'][0]
+        flag_reffice = f.variables['flag_reffice'][0]
     return  lat, lon, sza, cwp, wpi, rl, ri, cloud, z, t, q, p, dcwp, dwpi, drl, dri, co2, n2o, ch4, albedo_dir, albedo_diff, iceconc, semiss, clt, diff_lwp, flag_lwc, flag_iwc, flag_reff, flag_reffice 
         
 def main(fname_in, fname_out="out.nc"):
@@ -1264,18 +1260,18 @@ def main(fname_in, fname_out="out.nc"):
     lat, lon, sza, cwp, wpi, rl, ri, cloud, z, t, q, p, dcwp, dwpi, drl, dri, co2, n2o, ch4, albedo_dir, albedo_diff, iceconc, semiss, clt, diff_lwp, flag_lwc, flag_iwc, flag_reff, flag_reffice = read_input(fname_in)
     
     ## Read paths to RRTMG
-    with open("paths_rrtmg", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/paths_rrtmg", "r") as f:
         global SRC_RRTMG_LW, SRC_RRTMG_SW
-        SRC_RRTMG_LW = f.readline()
-        SRC_RRTMG_SW = f.readline()
+        SRC_RRTMG_LW = f.readline().rstrip()
+        SRC_RRTMG_SW = f.readline().rstrip()
         
     ## Read keys
-    with open("keys_sw", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/keys_sw", "r") as f:
         global KEYS_SW
         for line in f.readlines():
             KEYS_SW.append(line.rstrip())            
             
-    with open("keys_lw", "r") as f:
+    with open("/home/phi.richter/Code/run_RRTMG/keys_lw", "r") as f:
         global KEYS_LW
         for line in f.readlines():
             KEYS_LW.append(line.rstrip())      
@@ -1294,19 +1290,19 @@ def main(fname_in, fname_out="out.nc"):
     
     ## Perform all sky calculation
     all_sw, all_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    #dcwp_sw, dcwp_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp+delta, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    #drl_sw, drl_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl+delta, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    #dri_sw, dri_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri+delta, wpi, semiss, lat,  co2, n2o, ch4, clt, 2)   
-    #dwpi_sw, dwpi_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi+delta_wpi, semiss, lat, co2, n2o, ch4, clt, 2)   
+    dcwp_sw, dcwp_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp+delta, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
+    drl_sw, drl_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl+delta, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
+    dri_sw, dri_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri+delta, wpi, semiss, lat,  co2, n2o, ch4, clt, 2)   
+    dwpi_sw, dwpi_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi+delta_wpi, semiss, lat, co2, n2o, ch4, clt, 2)   
     
-    dcwp_sw = all_sw
-    dcwp_lw = all_lw
-    drl_sw = all_sw
-    drl_lw = all_lw
-    dri_sw = all_sw
-    dri_lw = all_lw
-    dwpi_sw = all_sw
-    dwpi_lw = all_lw
+    #dcwp_sw = all_sw
+    #dcwp_lw = all_lw
+    #drl_sw = all_sw
+    #drl_lw = all_lw
+    #dri_sw = all_sw
+    #dri_lw = all_lw
+    #dwpi_sw = all_sw
+    #dwpi_lw = all_lw
 
     ## Calculate difference quotient
     deriv_cwp_lw = error_propagation(dcwp_lw, all_lw, delta)
@@ -1331,6 +1327,14 @@ def main(fname_in, fname_out="out.nc"):
     return 1
 
 if __name__ == '__main__':
+    #if os.path.exists(sys.argv[2]):
+    #    shutil.rmtree(sys.argv[2])
+    #os.mkdir(sys.argv[2])
+    os.chdir(sys.argv[2])
     for fname in os.listdir(sys.argv[1]):
-        main(os.path.join(sys.argv[1], fname), "out.nc")
-        break
+        try:
+            if os.path.exists("RRTMG_"+fname):
+                continue
+            main(os.path.join(sys.argv[1], fname), "RRTMG_"+fname)
+        except Exception:
+            continue

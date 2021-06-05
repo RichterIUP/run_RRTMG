@@ -1094,9 +1094,9 @@ def write_results(all_sw, all_lw, clear_sw, clear_lw,  deriv_cwp_lw, deriv_cwp_s
         dwpi_out.units = "1"
         dwpi_out[:] = dwpi
         
-        #clt_out = outfile.createVariable("cloud_fraction", "f8", ("const", ))
-        #clt_out.units = "1"
-        #clt_out[:] = clt
+        clt_out = outfile.createVariable("cloud_fraction", "f8", ("cgrid", ))
+        clt_out.units = "1"
+        clt_out[:] = clt
         
         co2_out = outfile.createVariable("co2_profile", "f8", ("level", ))
         co2_out.units = "ppmv"
