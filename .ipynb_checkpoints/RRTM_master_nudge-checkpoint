@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -n 1
+#SBATCH -N 1
+#SBATCH -t 4320
+#SBATCH -p all
+#SBATCH --mem=9000
+#SBATCH --open-mode=append
+
+#export LBL_HOME=/home/phi.richter/radiative_transfer/lblrtm
+module unuse /home/eb/modules/all
+module unuse /home/eb/modules/LAMOS
+module use /home/eb/modules/_legacy/all
+module load Python
+module load netcdf4-python
+module load matplotlib
+
+sbatch RRTM_nudge /home/phi.richter/SOFTWARE_PHD/run_RRTMG/nudgeRRTMG_Cloudnet_scale_cwp_20 /home/phi.richter/RRTMG_input_scale_cwp_20
+sbatch RRTM_nudge /home/phi.richter/SOFTWARE_PHD/run_RRTMG/nudgeRRTMG_Cloudnet_scale_ri_15 /home/phi.richter/RRTMG_input_scale_ri_15
+sbatch RRTM_nudge /home/phi.richter/SOFTWARE_PHD/run_RRTMG/nudgeRRTMG_Cloudnet_scale_rl_15 /home/phi.richter/RRTMG_input_scale_rl_15

@@ -14,12 +14,61 @@ import pandas as pd
 import netCDF4 as nc
 import datetime as dt
 import numpy as np
+import scipy.interpolate as ip
 
 #path_home = os.getenv("HOME") + "/Code/RRTMG"
 SRC_RRTMG_LW = ""#path_home + '/models/rrtmg_lw_v5.00_linux_ifort'
 SRC_RRTMG_SW = ""#path_home + '/models/rrtmg_sw_v5.00_linux_pgi'
 KEYS_SW = []#['LEVEL', 'PRESSURE', 'UPWARD FLUX', 'DIFDOWN FLUX', 'DIRDOWN FLUX', 'DOWNWARD FLUX', 'NET FLUX', 'HEATING RATE']
 KEYS_LW = []#['LEVEL', 'PRESSURE', 'UPWARD FLUX', 'DOWNWARD FLUX', 'NET FLUX', 'HEATING RATE']
+PATH_ERA5 = "/mnt/beegfs/user/phi.richter/DATA_PHD/ERA5"
+ERA5_SP = os.path.join(PATH_ERA5, "era5_misc.nc")
+#ERA5_PRESSURE = None
+
+def interpolate_ERA5(data, lat_int, lon_int, time_int):
+    '''
+    Find nearest value of given key in ERA5 single level file
+    '''
+    tim = (time_int - dt.datetime(1900, 1, 1)).total_seconds()/3600
+
+    latitude = data[1]
+    longitude = data[2]
+    time = data[0]
+    value = data[3]
+    ret_val = np.array([])
+    lat_min = np.abs(latitude - lat_int)
+    lon_min = np.abs(longitude - lon_int)
+    time_min = np.abs(time - tim)
+    argmin_lat = np.argmin(lat_min)
+    argmin_lon = np.argmin(lon_min)
+    argmin_time = np.argmin(time_min)
+    ret_val = value[argmin_time, argmin_lat, argmin_lon]
+    return ret_val
+
+def open_era5(fname, key):
+    with nc.Dataset(fname) as f:
+        time = f.variables['time'][:]
+        latitude = f.variables['latitude'][:]
+        longitude = f.variables['longitude'][:]
+        cc = f.variables[key][:]
+    return [time, latitude, longitude, cc]
+
+
+def update_era5_sfc_pressure(sp, z, t, q, p, co2, n2o, ch4):
+    z_f = ip.interp1d(p, z, fill_value="extrapolate")
+    t_f = ip.interp1d(p, t, fill_value="extrapolate")
+    q_f = ip.interp1d(p, q, fill_value="extrapolate")
+    co2_f = ip.interp1d(p, co2, fill_value="extrapolate")
+    n2o_f = ip.interp1d(p, n2o, fill_value="extrapolate")
+    ch4_f = ip.interp1d(p, ch4, fill_value="extrapolate")
+    p[0] = sp*1e-2
+    z = z_f(p)
+    t = t_f(p)
+    q = q_f(p)
+    co2 = co2_f(p)
+    n2o = n2o_f(p)
+    ch4 = ch4_f(p)
+    return z, t, q, p, co2, n2o, ch4
 
 def create_cloud_rrtmg(lay_liq, lay_ice, cwp, rliq, rice, fice, homogenous, clt):     
     # =============================================================================
@@ -260,7 +309,7 @@ def create_input_rrtmg_lw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #     IEMIS  = 0 each band has surface emissivity equal to 1.0
     #            = 1 each band has the same surface emissivity (equal to SEMISS(16)) 
     #            = 2 each band has different surface emissivity (for band IB, equal to SEMISS(IB))
-    IEMIS = 1
+    IEMIS = 2#1
 
     #     IREFLECT = 0 for Lambertian reflection at surface, i.e. reflected radiance 
     #		is equal at all angles
@@ -273,12 +322,58 @@ def create_input_rrtmg_lw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #              the first value of SEMISS (SEMISS(16)) is considered.  If IEMIS = 2 
     #              and no surface emissivity value is given for SEMISS(IB), a value of 1.0 
     #              is used for band IB.
-    SEMISS = [semiss]
+    SEMISS = np.array([0.99 for i in range(16)])#[semiss]
+    SEMISS[np.array([7,8,9,10])] = 0.98
     RECORD_1_4  = "{:>10.3f}".format(TBOUND) 
     RECORD_1_4 += 1  * " " + "{:1d}".format(IEMIS)
     RECORD_1_4 += 2  * " " + "{:1d}".format(IREFLECT)
     for element in SEMISS:
         RECORD_1_4 += "{:>5.3f}".format(element)
+        
+    # RECORD 1.5     (only needed if ICLD .EQ. 4 or ICLD .EQ. 5)
+  
+    #LEN_TYPE
+ 
+    #       9-10
+ 
+    #     8X, I2 
+ 
+    #   LEN_TYPE   = 0 for constant decorrelation length in calculation of alpha
+    #                  for exponential or exponential-random cloud overlap;
+    #                  set decorrelation length in Record 1.5.1
+    #              = 1 for latitude-varying decorrelation length in calculation of alpha
+    #                  for exponential or exponential-random cloud overlap
+    #                  set decorrelation length in Record 1.5.1
+
+
+    #RECORD 1.5.1     (only needed if ICLD .EQ. 4 or ICLD .EQ. 5 and if LEN_TYPE = 0)
+  
+    # DECORR_LEN
+ 
+    #       1-10
+ 
+    #      F10.3
+ 
+    # DECORR_LEN   constant decorrelation length to use in calculation of alpha
+    #              for exponential or exponential-random cloud overlap (meters)
+
+    #RECORD 1.5.2     (only needed if ICLD .EQ. 4 or ICLD .EQ. 5 and if LEN_TYPE = 1)
+  
+    #     JULDAT,    LAT
+ 
+    #       6-10,  11-20
+ 
+    #     5X, I5,  F10.3
+ 
+    #     JULDAT   day of the year for calculation of latitude-varying decorrelation length
+    #              for exponential or exponential-random cloud overlap
+
+    #        LAT   latitude for calculation of latitude-varying decorrelation length
+    #              for exponential or exponential-random cloud overlap (degrees)
+
+    #              NOTE: if IATM .EQ. 1, then LAT will default to REF_LAT if that value 
+    #              is set in RECORD 3.1
+
         
     # ****************************************************************************
     #********     these records applicable if RRTATM selected (IATM=1)    ********
@@ -423,7 +518,7 @@ def create_input_rrtmg_lw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #               the K'th molecule (see Table II)
     #A -> ppmv, B -> cm-3, C -> g/kg, D -> g/m3 (so kann man retrievte Spurengase verwenden) H -> % (relative Humidity)
     # ( 1)  H2O  ( 2)  CO2  ( 3)    O3 ( 4)   N2O ( 5)    CO ( 6)   CH4 ( 7)    O2
-    with open("/home/phi.richter/Code/run_RRTMG/atmosphere", "r") as f:
+    with open("/home/phi.richter/SOFTWARE_PHD/run_RRTMG/atmosphere", "r") as f:
         JCHAR = f.readline().rstrip()
     #JCHAR = "HA4A4A4"
     #JCHAR = "C555555"
@@ -498,7 +593,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #                  = 0  - 4 streams (default)
     #                  = 1  - 8 streams
     #                  = 2  - 16 streams 
-    ISTRM = 2
+    ISTRM = 0#2
     
     #	  IOUT    = -1 if no output is to be printed out.
     #	          =  0 if the only output is for 820-50000 cm-1.
@@ -566,12 +661,12 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     JULDAT = juldat
     #    SZA          Solar zenith angle in degrees (0 degrees is overhead).
 
-    mu_sza = np.cos(solar_zenith_angle * np.pi / 180.0)
-    const = 0.001277
-    a = 1#6370
-    mu_sza_adj = const / (np.sqrt((mu_sza**a)**2 + (2 + const) * const) - mu_sza**a)
-    sza_adj = np.arccos(mu_sza_adj) * 180 / np.pi
-    SZA = sza_adj
+    #mu_sza = np.cos(solar_zenith_angle * np.pi / 180.0)
+    #const = 0.001277
+    #a = 1#6370
+    #mu_sza_adj = const / (np.sqrt((mu_sza**a)**2 + (2 + const) * const) - mu_sza**a)
+    #sza_adj = np.arccos(mu_sza_adj) * 180 / np.pi
+    SZA = solar_zenith_angle#sza_adj
     #    ISOLVAR      Solar variability option [-1,0,1,2,3]
 
 	#	     =-1 (when SCON .EQ. 0.0): no solar variability; each band uses the Kurucz 
@@ -625,7 +720,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #                     Total solar irradiance before individual band scale factors are applied
     #                     (if SCON > 0 internal solar irradiance is scaled to this value)
     #                 Set SCON = 0.0 to use internal solar irradiance, which depends on ISOLVAR
-    SCON = 1370#0
+    SCON = 1370
     #    SOLCYCFRAC   Solar cycle fraction (0-1); fraction of the way through the mean 11-year
     #                 cycle with 0.0 defined as the first day of year 1 and 1.0 defined as the
     #                 last day of year 11 (ISOLVAR=1 only). Note that for the combined effect of
@@ -687,6 +782,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #              the first value of SEMISS (SEMISS(16)) is considered.  If IEMIS = 2 
     #              and no surface emissivity value is given for SEMISS(IB), a value of 1.0 
     #              is used for band IB.
+    print(albedo_dir, albedo_diff)
     SEMISS_DIF = [1-albedo_dir]#[0.8]
     SEMISS_DIR = [1-albedo_diff]
     
@@ -839,7 +935,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     ZM = height_prof
  
     #      PM       pressure (units and input options set by JCHARP)
-    PM = press_prof
+    PM = press_prof*1e2
     
     #      TM       temperature (units and input options set by JCHART)
     TM = t_prof
@@ -852,12 +948,29 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     #               the K'th molecule (see Table II)
     #A -> ppmv, B -> cm-3, C -> g/kg, D -> g/m3 (so kann man retrievte Spurengase verwenden)
     # ( 1)  H2O  ( 2)  CO2  ( 3)    O3 ( 4)   N2O ( 5)    CO ( 6)   CH4 ( 7)    O2
-    with open("/home/phi.richter/Code/run_RRTMG/atmosphere", "r") as f:
+    with open("/home/phi.richter/SOFTWARE_PHD/run_RRTMG/atmosphere", "r") as f:
         JCHAR = f.readline().rstrip()
+    #print(JCHAR)
     #JCHAR = "H444444"
-    #JCHAR = "HA4A4A4"
+    #JCHAR = "4A4A4A4"
     #JCHAR = "H111111"
-     
+    #JCHAR = "HAAAAAA" 
+    #JCHAR = "AA4A4A4"
+    #JCHAR = "3A4A4A4"
+    ## Saturation Water Vapour Pressure
+    #T = np.array([293.15, 283.15, 273.15])
+    #T_c = 647.096
+    #theta = 1 - TM/T_c
+    #c = [-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502]
+    #P_c = 220640
+    #P_ws = P_c * np.exp(T_c/TM * (c[0]*theta + c[1]*theta**1.5 + c[2]*theta**3 + c[3]*theta**3.5 + c[4]*theta**4 + c[5]*theta**7.5))
+    
+    ## Partial Pressure
+    #P_w = P_ws * humd_prof/100.0
+    
+    ## Volume mixing ratio
+    #humd_prof = P_w/(PM)*1e6
+    #humd_prof *= 2
     #RECORD 3.6.1 ... 3.6.N
  
     #      VMOL(K), K=1, NMOL
@@ -876,7 +989,7 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     RECORD_3_5_6 = ""
     for loop in range(len(height_prof)):
         RECORD_3_5_6 += "{:10.3E}".format(ZM[loop])
-        RECORD_3_5_6 += "{:10.3E}".format(100*PM[loop])
+        RECORD_3_5_6 += "{:10.3E}".format(PM[loop])
         RECORD_3_5_6 += "{:10.3E}".format(TM[loop])
         RECORD_3_5_6 += 5 * " " + "{:1s}".format(JCHARP) + "{:1s}".format(JCHART)
         RECORD_3_5_6 += 3 * " " + "{}".format(JCHAR)
@@ -890,6 +1003,9 @@ def create_input_rrtmg_sw(height_prof, press_prof, t_prof, humd_prof, solar_zeni
     return RECORD_1_1 + "\n" + RECORD_1_2 + "\n" + RECORD_1_2_1 + "\n" + RECORD_1_4 + "\n" + \
             RECORD_3_1 + "\n" + RECORD_3_2 + "\n" + RECORD_3_3B + "\n" + RECORD_3_4 + "\n" + \
             RECORD_3_5_6
+    #return RECORD_1_1  + RECORD_1_2  + RECORD_1_2_1  + RECORD_1_4 + "\n" + "\n" + \
+    #        RECORD_3_1 + RECORD_3_2 + RECORD_3_3B + RECORD_3_4 + \
+    #        RECORD_3_5_6
 
 
 def read_results(layer, spec_range, keys, fname="OUTPUT_RRTM"):
@@ -940,13 +1056,13 @@ def read_results(layer, spec_range, keys, fname="OUTPUT_RRTM"):
     for key in range(len(header)):
         out.update({header[key]: col[key, :]})
     out = pd.DataFrame(out)
+    #print(out)
     return out
 
-def RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, clouds):
+def RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, clouds, juldat):
     '''
     Call RRTMG
     '''
-    
     ret = create_input_rrtmg_sw(height_prof=z, \
                            press_prof=p*1e-2, \
                            t_prof=t, \
@@ -955,13 +1071,15 @@ def RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, sem
                            clouds=clouds, \
                            albedo_dir=albedo_dir, \
                                albedo_diff=albedo_diff, \
-                               lat=lat, co2=co2, n2o=n2o, ch4=ch4)
+                               lat=lat, co2=co2, n2o=n2o, ch4=ch4, juldat=juldat)
     if clouds != 0:
-        cld = create_cloud_rrtmg(lay_liq=cloud, lay_ice=cloud, cwp=cwp, rliq=rl, rice=ri, fice=wpi, homogenous=False, clt=clt)
+        cld = create_cloud_rrtmg(lay_liq=cloud, lay_ice=cloud, cwp=cwp, rliq=rl, rice=ri, fice=wpi, homogenous=False, clt=clt)        
         with open("IN_CLD_RRTM", "w") as f:
             f.write(cld)
     with open("INPUT_RRTM", "w") as f:
         f.write(ret)
+        
+    subprocess.call(['cp', 'INPUT_RRTM', 'INPUT_RRTM_SW'])
 
     subprocess.call(['{}'.format(SRC_RRTMG_SW)])
     all_sw = read_results(len(z), 'sw_sum', KEYS_SW)
@@ -1136,7 +1254,8 @@ def write_results(all_sw, all_lw, clear_sw, clear_lw,  deriv_cwp_lw, deriv_cwp_s
                 
         oob = outfile.createVariable("out_of_bounds", "i4", ("const", ))
         oob[:] = oob_liq + oob_ice
-        
+        #print(clear_sw['DOWNWARD FLUX'])
+        #print(clear_lw['DOWNWARD FLUX'])
         clear_sw_out = [None for ii in range(len(clear_sw.keys()))]
         all_sw_out = [None for ii in range(len(all_sw.keys()))]
         deriv_cwp_sw_out = [None for ii in range(len(all_sw.keys()))]
@@ -1220,9 +1339,14 @@ def read_input(fname):
     Read atmospheric input for RRTMG calculation
     '''
     
+    
     with nc.Dataset(fname, "r") as f:
         lat = f.variables['lat'][0]
         lon = f.variables['lon'][0]
+        #print(fname.split("_"))
+        #sp = interpolate_ERA5(ERA5_PRESSURE, lat, lon, dt.datetime.strptime(fname.split("_")[-5], "%Y%m%d"))
+        #print(sp)
+            
         sza = f.variables['sza'][0]
         cwp = f.variables['cwp'][:]
         wpi = f.variables['wpi'][:]
@@ -1233,16 +1357,25 @@ def read_input(fname):
         t = f.variables['t'][:]
         q = f.variables['q'][:]
         p = f.variables['p'][:]
+        #q = convert(["-r", q], ["-tk", t], ["-p", p], False)[1]*1e3
         dcwp = f.variables['dcwp'][:]
         dwpi = f.variables['dwpi'][:]
         drl = f.variables['drl'][:]
         dri = f.variables['dri'][:]
-        co2 = f.variables['co2'][:]
-        n2o = f.variables['n2o'][:]
-        ch4 = f.variables['ch4'][:]
+        co2 = np.abs(f.variables['co2'][:])
+        n2o = np.abs(f.variables['n2o'][:])
+        ch4 = np.abs(f.variables['ch4'][:])
+        #print(z)
+        #print(p)
+        #z, t, q, p, co2, n2o, ch4 = update_era5_sfc_pressure(sp, z, t, q, p, co2, n2o, ch4)
+        #print(z)
+        #print(p)
+        #exit(-1)
         albedo_dir = np.float(f.variables['albedo_dir'][0])
         albedo_diff = np.float(f.variables['albedo_diff'][0])
         iceconc = np.float(f.variables['iceconc'][0])
+        if np.isnan(iceconc):
+            iceconc = 0.0
         semiss = f.variables['semiss'][0]
         clt = f.variables['clt'][:]
         diff_lwp = f.variables['diff_lwp'][0]
@@ -1252,35 +1385,40 @@ def read_input(fname):
         flag_reffice = f.variables['flag_reffice'][0]
     return  lat, lon, sza, cwp, wpi, rl, ri, cloud, z, t, q, p, dcwp, dwpi, drl, dri, co2, n2o, ch4, albedo_dir, albedo_diff, iceconc, semiss, clt, diff_lwp, flag_lwc, flag_iwc, flag_reff, flag_reffice 
         
-def main(fname_in, fname_out="out.nc"):
+def main(fname_in, fname_out="out.nc", ERA5_PRESSURE=None):
     '''
     Read input, call RRTMG and write results to file
     '''
     
-    lat, lon, sza, cwp, wpi, rl, ri, cloud, z, t, q, p, dcwp, dwpi, drl, dri, co2, n2o, ch4, albedo_dir, albedo_diff, iceconc, semiss, clt, diff_lwp, flag_lwc, flag_iwc, flag_reff, flag_reffice = read_input(fname_in)
+    #print(fname)
     
+    lat, lon, sza, cwp, wpi, rl, ri, cloud, z, t, q, p, dcwp, dwpi, drl, dri, co2, n2o, ch4, albedo_dir, albedo_diff, iceconc, semiss, clt, diff_lwp, flag_lwc, flag_iwc, flag_reff, flag_reffice = read_input(fname_in)
+        
     ## Read paths to RRTMG
-    with open("/home/phi.richter/Code/run_RRTMG/paths_rrtmg", "r") as f:
+    with open("/home/phi.richter/SOFTWARE_PHD/run_RRTMG/paths_rrtmg", "r") as f:
         global SRC_RRTMG_LW, SRC_RRTMG_SW
         SRC_RRTMG_LW = f.readline().rstrip()
         SRC_RRTMG_SW = f.readline().rstrip()
         
     ## Read keys
-    with open("/home/phi.richter/Code/run_RRTMG/keys_sw", "r") as f:
+    with open("/home/phi.richter/SOFTWARE_PHD/run_RRTMG/keys_sw", "r") as f:
         global KEYS_SW
         for line in f.readlines():
             KEYS_SW.append(line.rstrip())            
             
-    with open("/home/phi.richter/Code/run_RRTMG/keys_lw", "r") as f:
+    with open("/home/phi.richter/SOFTWARE_PHD/run_RRTMG/keys_lw", "r") as f:
         global KEYS_LW
         for line in f.readlines():
-            KEYS_LW.append(line.rstrip())      
+            KEYS_LW.append(line.rstrip())    
+            
+    #print((dt.datetime.strptime(fname.split("_")[2], "%Y%m%d") - dt.datetime(2017, 1, 1)).days)
+    #exit(-1)
             
     if sza > 90.0:
         sza = 90.0
     
     ## Perform clear sky calculation
-    clear_sw, clear_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 0)
+    clear_sw, clear_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 0, juldat=(dt.datetime.strptime(fname.split("_")[2], "%Y%m%d") - dt.datetime(2017, 1, 1)).days)
 
     delta = 0.01
     delta_wpi = 0.01
@@ -1289,20 +1427,21 @@ def main(fname_in, fname_out="out.nc"):
         
     
     ## Perform all sky calculation
-    all_sw, all_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    dcwp_sw, dcwp_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp+delta, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    drl_sw, drl_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl+delta, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
-    dri_sw, dri_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri+delta, wpi, semiss, lat,  co2, n2o, ch4, clt, 2)   
-    dwpi_sw, dwpi_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi+delta_wpi, semiss, lat, co2, n2o, ch4, clt, 2)   
-    
-    #dcwp_sw = all_sw
-    #dcwp_lw = all_lw
-    #drl_sw = all_sw
-    #drl_lw = all_lw
-    #dri_sw = all_sw
-    #dri_lw = all_lw
-    #dwpi_sw = all_sw
-    #dwpi_lw = all_lw
+    all_sw, all_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2, juldat=(dt.datetime.strptime(fname.split("_")[2], "%Y%m%d") - dt.datetime(2017, 1, 1)).days)
+    #dcwp_sw, dcwp_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp+delta, rl, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
+    #drl_sw, drl_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl+delta, ri, wpi, semiss, lat, co2, n2o, ch4, clt, 2)
+    #dri_sw, dri_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri+delta, wpi, semiss, lat,  co2, n2o, ch4, clt, 2)   
+    #dwpi_sw, dwpi_lw = RRTMG(z, p, t, q, sza, albedo_dir, albedo_diff, cloud, cwp, rl, ri, wpi+delta_wpi, semiss, lat, co2, n2o, ch4, clt, 2)   
+    #all_lw = clear_lw
+    #all_sw = clear_sw
+    dcwp_sw = all_sw
+    dcwp_lw = all_lw
+    drl_sw = all_sw
+    drl_lw = all_lw
+    dri_sw = all_sw
+    dri_lw = all_lw
+    dwpi_sw = all_sw
+    dwpi_lw = all_lw
 
     ## Calculate difference quotient
     deriv_cwp_lw = error_propagation(dcwp_lw, all_lw, delta)
@@ -1313,7 +1452,7 @@ def main(fname_in, fname_out="out.nc"):
     deriv_ri_sw = error_propagation(dri_sw, all_sw, delta)
     deriv_wpi_lw = error_propagation(dwpi_lw, all_lw, delta_wpi)
     deriv_wpi_sw = error_propagation(dwpi_sw, all_sw, delta_wpi)
-          
+              
     ## Write results to netCDF4-File
     write_results(all_sw, all_lw, clear_sw, clear_lw, deriv_cwp_lw, deriv_cwp_sw, deriv_rl_lw, deriv_rl_sw, deriv_ri_lw, deriv_ri_sw, deriv_wpi_lw, deriv_wpi_sw, lat, lon, sza, cwp, wpi, rl, ri, cloud, z, t, q, p, dcwp, dwpi, drl, dri, co2, n2o, ch4, albedo_dir, albedo_diff, iceconc, semiss, clt, diff_lwp, flag_lwc, flag_iwc, flag_reff, flag_reffice, fname_out)
 
@@ -1327,14 +1466,19 @@ def main(fname_in, fname_out="out.nc"):
     return 1
 
 if __name__ == '__main__':
+    #global ERA5_PRESSURE
+    #ERA5_PRESSURE = open_era5(ERA5_SP, 'sp')
     #if os.path.exists(sys.argv[2]):
     #    shutil.rmtree(sys.argv[2])
     #os.mkdir(sys.argv[2])
     os.chdir(sys.argv[2])
-    for fname in os.listdir(sys.argv[1]):
+    for fname in sorted(os.listdir(sys.argv[1])):
         try:
+            #if True:
             if os.path.exists("RRTMG_"+fname):
                 continue
+            #if fname != "ERA5_20170602_080000.nc":
+            #    continue
             main(os.path.join(sys.argv[1], fname), "RRTMG_"+fname)
         except Exception:
             continue

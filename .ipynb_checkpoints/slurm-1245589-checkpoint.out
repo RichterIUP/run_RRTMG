@@ -1,0 +1,9 @@
+mkdir: cannot create directory ‘/home/phi.richter/SOFTWARE_PHD/run_RRTMG/RRTMG_ERA5_virtual_temperature’: File exists
+ln: failed to create symbolic link ‘/home/phi.richter/SOFTWARE_PHD/run_RRTMG/RRTMG_ERA5_virtual_temperature/paths_rrtmg’: File exists
+ln: failed to create symbolic link ‘/home/phi.richter/SOFTWARE_PHD/run_RRTMG/RRTMG_ERA5_virtual_temperature/keys_sw’: File exists
+ln: failed to create symbolic link ‘/home/phi.richter/SOFTWARE_PHD/run_RRTMG/RRTMG_ERA5_virtual_temperature/keys_lw’: File exists
+ln: failed to create symbolic link ‘/home/phi.richter/SOFTWARE_PHD/run_RRTMG/RRTMG_ERA5_virtual_temperature/atmosphere’: File exists
+run_RRTMG.py:1228: RuntimeWarning: invalid value encountered in greater
+  rl  = f.variables['rl'][:]
+run_RRTMG.py:1244: UserWarning: Warning: converting a masked element to nan.
+  iceconc = np.float(f.variables['iceconc'][0])

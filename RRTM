@@ -15,9 +15,10 @@ module load netcdf4-python
 module load matplotlib
 
 
-#mkdir $1
-#ln -s paths_rrtmg $1
-#ln -s keys_sw $1
-#ln -s keys_lw $1
-#ln -s atmosphere $1
+mkdir $1
+ln -s /home/phi.richter/Code/run_RRTMG/paths_rrtmg $1
+ln -s /home/phi.richter/Code/run_RRTMG/keys_sw $1
+ln -s /home/phi.richter/Code/run_RRTMG/keys_lw $1
+ln -s /home/phi.richter/Code/run_RRTMG/atmosphere $1
 python3 run_RRTMG.py $2 $1
+

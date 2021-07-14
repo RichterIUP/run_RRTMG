@@ -1,0 +1,4 @@
+ln: failed to create symbolic link ‘/home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_nomod/paths_rrtmg’: File exists
+ln: failed to create symbolic link ‘/home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_nomod/keys_sw’: File exists
+ln: failed to create symbolic link ‘/home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_nomod/keys_lw’: File exists
+ln: failed to create symbolic link ‘/home/phi.richter/Code/run_RRTMG/RRTMG_ERA5_nomod/atmosphere’: File exists
